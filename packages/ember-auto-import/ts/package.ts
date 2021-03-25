@@ -234,7 +234,7 @@ export default class Package {
       );
     }
 
-    if (isEmberAddonDependency(packagePath)) {
+    if (isV1EmberAddonDependency(packagePath)) {
       // ember addon are not auto imported
       return;
     }
@@ -324,12 +324,12 @@ export default class Package {
 }
 
 const isAddonCache = new Map<string, boolean>();
-function isEmberAddonDependency(pathToPackageJSON: string): boolean {
+function isV1EmberAddonDependency(pathToPackageJSON: string): boolean {
   let cached = isAddonCache.get(pathToPackageJSON);
   if (cached === undefined) {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     let packageJSON = require(pathToPackageJSON);
-    let answer = packageJSON.keywords?.includes('ember-addon') || false;
+    let answer = packageJSON.keywords?.includes('ember-addon') && packageJSON['ember-addon']?.version !== 2;
     isAddonCache.set(pathToPackageJSON, answer);
     return answer;
   } else {
