@@ -29,7 +29,6 @@ export default class AutoImport implements AutoImportSharedAPI {
   private consoleWrite: (msg: string) => void;
   private analyzers: Map<Analyzer, Package> = new Map();
   private bundles: BundleConfig;
-  private targets: unknown;
 
   static register(addon: AddonInstance) {
     LeaderChooser.for(addon).register(addon, () => new AutoImport(addon));
@@ -45,7 +44,6 @@ export default class AutoImport implements AutoImportSharedAPI {
     this.packages.add(Package.lookupParentOf(topmostAddon));
     let host = topmostAddon.app;
     this.env = host.env;
-    this.targets = host.project.targets;
     this.bundles = new BundleConfig(host);
     if (!this.env) {
       throw new Error('Bug in ember-auto-import: did not discover environment');
@@ -82,7 +80,6 @@ export default class AutoImport implements AutoImportSharedAPI {
       packages: this.packages,
       consoleWrite: this.consoleWrite,
       bundles: this.bundles,
-      targets: this.targets,
     });
   }
 

@@ -19,7 +19,6 @@ export interface BundlerPluginOptions {
   splitter: Splitter;
   packages: Set<Package>;
   bundles: BundleConfig;
-  targets: unknown;
 }
 
 export interface BuildResult {
@@ -97,7 +96,7 @@ export default class Bundler extends Plugin {
         this.options.consoleWrite,
         this.publicAssetURL,
         this.skipBabel,
-        this.options.targets,
+        this.rootPackage.cleanBabelConfig(),
         this.cachePath! // cast is OK because we passed needsCache: true to super constructor
       );
     }

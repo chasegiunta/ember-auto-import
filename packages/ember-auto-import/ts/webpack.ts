@@ -8,8 +8,9 @@ import { BundleDependencies, ResolvedImport, sharedResolverOptions } from './spl
 import { BundlerHook, BuildResult } from './bundler';
 import BundleConfig from './bundle-config';
 import { ensureDirSync } from 'fs-extra';
-import { babelFilter } from '@embroider/core';
+import { babelFilter } from '@embroider/shared-internals';
 import { Options } from './package';
+import type { TransformOptions } from '@babel/core';
 
 registerHelper('js-string-escape', jsStringEscape);
 registerHelper('join', function (list, connector) {
@@ -90,7 +91,7 @@ export default class WebpackBundler implements BundlerHook {
     private consoleWrite: (message: string) => void,
     private publicAssetURL: string | undefined,
     private skipBabel: Required<Options>['skipBabel'],
-    private babelTargets: unknown,
+    private babelConfig: TransformOptions,
     tempArea: string
   ) {
     // resolve the real path, because we're going to do path comparisons later
@@ -162,21 +163,7 @@ export default class WebpackBundler implements BundlerHook {
       },
       use: {
         loader: 'babel-loader-8',
-        options: {
-          // do not use the host project's own `babel.config.js` file
-          configFile: false,
-          babelrc: false,
-
-          presets: [
-            [
-              require.resolve('@babel/preset-env'),
-              {
-                modules: false,
-                targets: this.babelTargets,
-              },
-            ],
-          ],
-        },
+        options: this.babelConfig,
       },
     };
   }
