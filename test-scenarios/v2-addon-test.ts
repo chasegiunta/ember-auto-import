@@ -2,6 +2,7 @@ import merge from 'lodash/merge';
 import { appScenarios } from './scenarios';
 import { PreparedApp, Project } from 'scenario-tester';
 import { setupFastboot } from './fastboot-helper';
+import { dirname } from 'path';
 import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
@@ -13,6 +14,22 @@ function buildV2Addon() {
         module.exports = addonV1Shim(__dirname);
       `,
       'index.js': `
+        import plainDep from 'plain-dep';
+        import { innerV1Addon } from 'inner-v1-addon';
+        import { innerV2Addon } from 'inner-v2-addon';
+
+        export function usePlainDep() {
+          return plainDep();
+        }
+
+        export function useInnerV1Addon() {
+          return innerV1Addon();
+        }
+
+        export function useInnerV2Addon() {
+          return innerV2Addon();
+        }
+
         export function helloUtil() {
           return 'hello-util-worked';
         }
@@ -48,19 +65,63 @@ function buildV2Addon() {
     },
   });
   addon.linkDependency('@embroider/util', { baseDir: __dirname });
+
+  addon.addDependency('plain-dep', {
+    files: {
+      'index.js': `export default function() { return 'plain-dep-worked'; }`,
+    },
+  });
+
+  addon.addDependency(buildInnerV1Addon());
+  addon.addDependency(buildInnerV2Addon());
+
   addon.pkg.keywords = addon.pkg.keywords ? [...addon.pkg.keywords, 'ember-addon'] : ['ember-addon'];
   addon.pkg['ember-addon'] = {
     version: 2,
     type: 'addon',
     main: './addon-main.js',
-    exports: {
-      '.': 'index.js',
-      './app/components/hello-world': './app/components/hello-world.js',
-      './components/hello': './components/hello.js',
-    },
     'app-js': {
       './components/hello-world.js': './app/components/hello-world.js',
     },
+  };
+  return addon;
+}
+
+function buildInnerV1Addon() {
+  let addon = Project.fromDir(dirname(require.resolve('@ef4/addon-template/package.json')), { linkDeps: true });
+  addon.name = 'inner-v1-addon';
+  merge(addon.files, {
+    addon: {
+      'index.js': `
+        export function innerV1Addon() {
+          return 'inner-v1-addon-worked';
+        }
+      `,
+    },
+  });
+  return addon;
+}
+
+function buildInnerV2Addon() {
+  let addon = new Project('inner-v2-addon', {
+    files: {
+      'addon-main.js': `
+        const { addonV1Shim } = require('@embroider/util/shim');
+        module.exports = addonV1Shim(__dirname);
+      `,
+      'index.js': `
+        export function innerV2Addon() {
+          return 'inner-v2-addon-worked';
+        }
+      `,
+    },
+  });
+  addon.linkDependency('@embroider/util', { baseDir: __dirname });
+  addon.pkg.keywords = addon.pkg.keywords ? [...addon.pkg.keywords, 'ember-addon'] : ['ember-addon'];
+  addon.pkg['ember-addon'] = {
+    version: 2,
+    type: 'addon',
+    main: './addon-main.js',
   };
   return addon;
 }
@@ -72,10 +133,11 @@ let scenarios = appScenarios.map('v2-addon', project => {
     app: {
       lib: {
         'exercise.js': `
-            import { helloUtil } from 'my-v2-addon';
+            import { helloUtil, usePlainDep, useInnerV1Addon, useInnerV2Addon } from 'my-v2-addon';
             export function useHelloUtil() {
               return helloUtil();
             }
+            export { usePlainDep, useInnerV1Addon, useInnerV2Addon };
           `,
       },
       helpers: {
@@ -134,12 +196,30 @@ let scenarios = appScenarios.map('v2-addon', project => {
       unit: {
         'inner-module-test.js': `
             import { module, test } from 'qunit';
-            import { useHelloUtil } from '@ef4/app-template/lib/exercise';
+            import { useHelloUtil, usePlainDep, useInnerV1Addon, useInnerV2Addon } from '@ef4/app-template/lib/exercise';
             import { helloTestSupport } from 'my-v2-addon/test-support';
 
             module('Unit | import from v2-addon', function () {
               test('can import from v2 addon top-level export', function (assert) {
                 assert.equal(useHelloUtil(), 'hello-util-worked');
+              });
+              test('v2 addon was able to import from a plain npm package', function (assert) {
+                assert.equal(usePlainDep(), 'plain-dep-worked');
+              });
+              test('plain npm package consumed by v2 package does not show up in amd loader', function(assert) {
+                assert.throws(() => window.require('plain-dep'));
+              });
+              test('v2 addon was able to import from a v1 addon', function (assert) {
+                assert.equal(useInnerV1Addon(), 'inner-v1-addon-worked');
+              });
+              test('inner v1 addon shows up in amd loader', function (assert) {
+                assert.equal(window.require('inner-v1-addon').innerV1Addon(), 'inner-v1-addon-worked');
+              });
+              test('v2 addon was able to import from a v2 addon', function (assert) {
+                assert.equal(useInnerV2Addon(), 'inner-v2-addon-worked');
+              });
+              test('second-level v2 addon does not show up in amd loader', function(assert) {
+                assert.throws(() => window.require('inner-v2-addon'));
               });
               test('tests can import directly from another exported module', function (assert) {
                 assert.equal(helloTestSupport(), 'hello-test-support-worked');
@@ -168,6 +248,7 @@ scenarios.forEachScenario(scenario => {
 });
 
 scenarios
+  .only('release-v2-addon')
   .expand({
     'fastboot-dev': () => {},
     'fastboot-prod': () => {},

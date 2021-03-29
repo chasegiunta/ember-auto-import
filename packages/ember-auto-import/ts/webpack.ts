@@ -1,4 +1,4 @@
-import webpack, { Configuration } from 'webpack';
+import webpack, { Configuration, ExternalsFunctionElement } from 'webpack';
 import { join, dirname } from 'path';
 import { mergeWith, flatten, zip } from 'lodash';
 import { writeFileSync, realpathSync } from 'fs';
@@ -8,9 +8,11 @@ import { BundleDependencies, ResolvedImport, sharedResolverOptions } from './spl
 import { BundlerHook, BuildResult } from './bundler';
 import BundleConfig from './bundle-config';
 import { ensureDirSync } from 'fs-extra';
-import { babelFilter } from '@embroider/shared-internals';
+import { babelFilter, packageName } from '@embroider/shared-internals';
 import { Options } from './package';
 import type { TransformOptions } from '@babel/core';
+import { PackageCache } from '@embroider/shared-internals';
+import { Memoize } from 'typescript-memoize';
 
 registerHelper('js-string-escape', jsStringEscape);
 registerHelper('join', function (list, connector) {
@@ -141,6 +143,7 @@ export default class WebpackBundler implements BundlerHook {
         rules: [this.babelRule()],
       },
       node: false,
+      externals: [this.externalsHandler],
     };
     if (extraWebpackConfig) {
       mergeConfig(config, extraWebpackConfig);
@@ -165,6 +168,43 @@ export default class WebpackBundler implements BundlerHook {
         loader: 'babel-loader-8',
         options: this.babelConfig,
       },
+    };
+  }
+
+  @Memoize()
+  private get externalsHandler(): ExternalsFunctionElement {
+    let packageCache = new PackageCache();
+    return function (context, request, callback) {
+      let name = packageName(request);
+      if (!name) {
+        // we're only interested in handling inter-package resolutions
+        return callback();
+      }
+      let pkg = packageCache.ownerOfFile(context);
+      if (!pkg?.isV2Addon()) {
+        // we're only interested in imports that appear inside v2 addons
+        return callback();
+      }
+
+      try {
+        let found = packageCache.resolve(name, pkg);
+        if (!found.isEmberPackage() || found.isV2Addon()) {
+          // if we're importing a non-ember package or a v2 addon, we don't
+          // externalize. Those are all "normal" looking packages that should be
+          // resolvable statically.
+          return callback();
+        } else {
+          // the package exists but it is a v1 ember addon, so it's not
+          // resolvable at build time, so we externalize it.
+          return callback(null, 'commonjs ' + request);
+        }
+      } catch (err) {
+        if (err.code !== 'MODULE_NOT_FOUND') {
+          throw err;
+        }
+        // real package doesn't exist, so externalize it
+        return callback(null, 'commonjs ' + request);
+      }
     };
   }
 

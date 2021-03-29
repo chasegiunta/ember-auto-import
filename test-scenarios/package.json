@@ -5,7 +5,7 @@
     "@types/qunit": "^2.11.1",
     "qunit": "^2.6.1",
     "ts-node": "^9.1.1",
-    "scenario-tester": "0.2.0",
+    "scenario-tester": "^0.3.0",
     "fastboot": "^3.1.2",
     "jsdom": "^11.11.0"
   },
@@ -18,7 +18,7 @@
   "devDependencies": {
     "@ef4/addon-template": "*",
     "@ef4/app-template": "*",
-    "@embroider/util": "0.38.0-alpha.2",
+    "@embroider/util": "0.38.0-alpha.3",
     "ember-auto-import": "1.11.2",
     "ember-cli-2.18": "npm:ember-cli@~2.18.0",
     "ember-cli-babel6": "npm:ember-cli-babel@^6.6.0",
