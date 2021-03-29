@@ -8,7 +8,7 @@ import BundleConfig from './bundle-config';
 import Append from './broccoli-append';
 import { Node } from 'broccoli-node-api';
 import { LeaderChooser } from './leader';
-import { AddonInstance, AppInstance, findTopmostAddon } from './ember-cli-models';
+import { AddonInstance, AppInstance, findTopmostAddon } from '@embroider/shared-internals';
 
 const debugTree = buildDebugCallback('ember-auto-import');
 

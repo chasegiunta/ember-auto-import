@@ -6,6 +6,8 @@ import pkg from '../package';
 module.exports = {
   name: pkg.name,
 
+  v2AddonSupportLevel: 1,
+
   init(...args: any[]) {
     this._super.init.apply(this, args);
     AutoImport.register(this);

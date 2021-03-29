@@ -3,7 +3,7 @@ import { join, dirname } from 'path';
 import { readFileSync } from 'fs';
 import { Memoize } from 'typescript-memoize';
 import { Configuration } from 'webpack';
-import { AddonInstance, isDeepAddonInstance, Project } from './ember-cli-models';
+import { AddonInstance, isDeepAddonInstance, Project } from '@embroider/shared-internals';
 import semver from 'semver';
 import type { TransformOptions } from '@babel/core';
 
@@ -139,6 +139,8 @@ export default class Package {
     let templateCompilerPath: string = (emberSource as any).absolutePaths.templateCompiler;
 
     let plugins = [
+      [require.resolve('@babel/plugin-proposal-decorators'), { legacy: true }],
+      [require.resolve('@babel/plugin-proposal-class-properties'), { loose: true }],
       [
         require.resolve('babel-plugin-htmlbars-inline-precompile'),
         {

@@ -1,6 +1,6 @@
 import { gt } from 'semver';
 import type AutoImport from './auto-import';
-import { Project, AddonInstance } from './ember-cli-models';
+import { Project, AddonInstance } from '@embroider/shared-internals';
 import { Node } from 'broccoli-node-api';
 
 const protocolV1 = '__ember_auto_import_protocol_v1__';

@@ -133,6 +133,8 @@ export default class WebpackBundler implements BundlerHook {
           // not overriding the default loader resolution rules in case the app also
           // wants to control those.
           'babel-loader-8': require.resolve('babel-loader'),
+          'eai-style-loader': require.resolve('style-loader'),
+          'eai-css-loader': require.resolve('css-loader'),
         },
       },
       resolve: {
@@ -140,7 +142,13 @@ export default class WebpackBundler implements BundlerHook {
       },
       module: {
         noParse: file => file === join(this.stagingDir, 'l.js'),
-        rules: [this.babelRule()],
+        rules: [
+          this.babelRule(),
+          {
+            test: /\.css$/i,
+            use: ['eai-style-loader', 'eai-css-loader'],
+          },
+        ],
       },
       node: false,
       externals: [this.externalsHandler],
@@ -175,6 +183,9 @@ export default class WebpackBundler implements BundlerHook {
   private get externalsHandler(): ExternalsFunctionElement {
     let packageCache = new PackageCache();
     return function (context, request, callback) {
+      if (request.startsWith('!')) {
+        return callback();
+      }
       let name = packageName(request);
       if (!name) {
         // we're only interested in handling inter-package resolutions
