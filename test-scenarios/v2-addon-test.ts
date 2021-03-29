@@ -126,7 +126,7 @@ function buildInnerV2Addon() {
   return addon;
 }
 
-let scenarios = appScenarios.map('v2-addon', project => {
+let scenarios = appScenarios.skip('lts').map('v2-addon', project => {
   project.addDevDependency(buildV2Addon());
 
   merge(project.files, {
