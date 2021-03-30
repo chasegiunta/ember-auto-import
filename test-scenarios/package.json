@@ -33,6 +33,7 @@
     "ember-source-beta": "npm:ember-source@beta",
     "ember-source-canary": "https://s3.amazonaws.com/builds.emberjs.com/canary/shas/114ffbaca214896df8a7279b10589486e9e5c2f8.tgz",
     "ember-source-latest": "npm:ember-source@latest",
+    "js-string-escape": "^1.0.1",
     "lodash": "^4.17.20",
     "lodash-es": "^4.17.10",
     "moment": "^2.22.1",
