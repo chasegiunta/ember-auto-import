@@ -1,4 +1,5 @@
 {
+  "name": "ember-auto-import",
   "version": "1.0.0",
   "private": true,
   "scripts": {
